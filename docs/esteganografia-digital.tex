@@ -1,0 +1,637 @@
+\documentclass[a4paper]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xfrac}
+\usepackage[colorinlistoftodos]{todonotes}
+
+\title{Esteganografía digital utilizando la\\ Transformada Discreta de Fourier \\ \vspace{4 mm}  \large UN-ESTEGANOS  } 
+
+\author{
+  Bohórquez, Edwin\\
+  \texttt{eabohorquezg@unal.edu.co}
+  \and
+  D'Anetra, Gustavo\\
+  \texttt{gadanetrac@unal.edu.co}
+  \and
+  Muñoz, Fernando\\
+  \texttt{fmunozs@unal.edu.co}
+  \and
+  Perdomo, José\\
+  \texttt{jdperdomos@unal.edu.co}
+}
+
+
+\date{25 de noviembre 2014}
+
+
+\begin{document}
+\maketitle
+
+
+\section{Introducción}
+
+Algunas veces necesitamos enviar un mensaje a través de Internet a otra persona, pero no queremos que nadie más lea este, es decir queremos ocultar la información, para evitar que alguien no autorizado tenga acceso a ella; pero al pensar en esto se nos viene una pregunta a la cabeza ¿es suficiente?, hoy en día existen muchos métodos para descifrar información, así que se hace necesario hacer algo más, si nosotros enviamos una imagen común y corriente a nuestro destinatario, en lugar  de un mensaje codificado y esta llega a ser interceptada, tal vez no logre llamar la atención del atacante, al ver una simple imagen en el mensaje, como por ejemplo la foto de algún lugar de interés; entonces si nos aprovechamos de este hecho, podríamos enviar mensajes que no solo están cifrados, sino que además están ocultos en imágenes normales, evitando posibles ataques o accesos indeseados a la información enviada.\\
+
+En este proyecto mostraremos una forma de proteger la información de la forma anteriormente descrita, utilizando los coeficientes de la Transformada discreta de Fourier.\\
+
+\section{Objetivos}
+
+\begin{itemize}
+\item Lograr establecer un canal digital encubierto de comunicación, de modo que pase inadvertido para observadores que tienen acceso a ese canal (en este caso una imagen).
+\item Aplicar una técnica que permita ocultar un mensaje o imagen dentro de otra imagen, de modo que no se perciba su existencia.
+\item Aprender sobre la Transformada de Fourier, la Transformada Rápida de Fourier y la Transformada Discreta de Fourier.
+\item Aplicar la Transformada Discreta de Fourier a la Esteganografía digital de imágenes.
+\item Implementar una aplicación en el lenguaje de programación Java, en la que se pueda ver la utilidad de la Transformada Discreta de Fourier en la Esteganografía digital de imágenes.
+\end{itemize}
+
+\section{Esteganografía}
+
+\subsection{¿Qué es?}
+
+La esteganografía es el arte de ocultar información de tal manera que se prevenga la detección del mensaje oculto. La palabra esteganografía tiene origen griego en las palabras \emph{steganos} y \emph{graphein}, las cuales significan ``oculto o protegido'' y ``dibujar o escribir'' respectivamente.  Esta disciplina permite ocultar mensajes secretos en imágenes, audio o video para encubrir la información y prevenir la detección del mensaje oculto por usuarios no autorizados.\\
+
+El Problema del Prisionero y el Canal Oculto, propuesto en 1983 por Gustavus Simmons describe un escenario en el cual la esteganografía brinda una solución, dos prisioneros cómplices en un crimen fueron arrestados y colocados en celdas aisladas.\\
+
+El guardián de la cárcel, les permite intercambiar mensajes pero sólo si él transporta el mensaje de uno hacia el otro y siempre que al leer esas comunicaciones esté seguro de que los mensajes que se intercambian son inofensivos y no están intercambiando mensajes para poder escapar.\\
+
+Esta forma de comunicación es la única que tienen disponible los prisioneros. Los prisioneros necesitan comunicarse para poder planear su escape, por lo cual deben aceptar las condiciones. El guardia finalizará la comunicación si descubre un canal secreto, por esta razón no pueden utilizar métodos de cifrado. La única posibilidad que tienen es establecer algún tipo de canal oculto en los mensajes que se intercambian. \cite{simmons83}
+
+
+\subsection{Conceptos básicos}
+
+\begin{description}
+\item[Portador] Básicamente es cualquier objeto o canal que puede ser alterado para ocultar el mensaje, en nuestro caso será una imagen.
+\item[Mensaje legítimo] Se refiere al mensaje que está actualmente en el portador.
+\item[Mensaje Esteganográfico] Se refiere al mensaje que queremos ocultar.
+\item[Estego-algoritmo] Es el algoritmo que usamos para ocultar el mensaje, este nos dice cómo incorporar el mensaje en el portador.
+\item[Canal de selección] Es un canal auxiliar, que permite seleccionar las posiciones del portador que van a ser usadas para ocultar el mensaje.
+\end{description}
+
+\section{Transformada de Fourier}
+
+La palabra transformada indica que vamos a trabajar con una herramienta que transforma un tipo determinado de problema en otro. Para conocer bien este tema vamos a comenzar estudiando la Transformada Continua de Fourier.
+
+\subsection{Transformada Continua de Fourier}
+
+La Transformada continua de Fourier es una aplicación lineal que tiene una serie de propiedades de continuidad que garantizan que puede extenderse a espacios de funciones mayores e incluso a espacios de funciones generalizadas.
+
+Un proceso físico se puede describir en el dominio del tiempo, $f(t)$,  o en el dominio de la frecuencia angular $F(w)$. Donde  $w = 2 \pi f$ (frecuencia angular) se refiere a la frecuencia del movimiento circular expresada en proporción del cambio de ángulo.
+
+En general, $f(t)$ y $F(w)$ son funciones complejas $f(t)$  y $F(w)$ son dos representaciones diferentes de la misma función:
+
+
+$$F \{f(t)\} = \int_{-\infty}^{\infty} f(t) e^{-jwt} dw = F(W)  $$
+
+
+$$F^{-1}\{F(w)\} = \frac{1}{2\pi} \int_{-\infty}^{\infty}  F(w) e^{jwt} dw = f(t) $$
+
+Donde $e^{-jwt}$ se conoce como el núcleo de la transformada de $f(t)$, y $e^{jwt}$ es el núcleo de la transformada de $F(w)$.
+
+\subsection{Transformada Discreta de Fourier}
+
+En tratamiento digital de señal y por extensión en tratamiento digital de imagen, no disponemos de una señal continua, sino de una serie de muestras de la señal. Supongamos que tenemos $N$ muestras:  
+
+$$ h_k = h(t_k); t_k = k \Delta; k = 0,1,2,..., N-1 $$
+
+Donde $\Delta$ es el intervalo de muestreo.\\
+
+Con $N$ números de entrada no podemos producir más que $N$ números independientes entre sí en la salida.\\
+
+Como nuestra señal es discreta estimaremos la transformada de Fourier solo para algunos valores discretos de frecuencia:
+
+$$ f_n = \frac{n}{N \Delta} ; n = -\frac{N}{2},...,\frac{N}{2} $$
+
+Para ello aproximamos la integral por una suma discreta, tenemos que:
+
+$$H(w) = \int_{-\infty}^{+\infty}h(t) e^{-jwt} dt$$
+
+Teniendo en cuenta que $w = 2 \pi f$:
+
+$$H(f_n) = \int_{-\infty}^{+\infty}h(t) e^{-j 2 \pi f_n t} dt \approx \sum_{k=0}^{N-1} h_ke^{-j 2 \pi f_n t_k} \Delta \approx \Delta \sum_{k=0}^{N-1} h_ke^{-j 2 \pi kn / N}  $$
+
+La suma final no depende del intervalo de muestreo, $\Delta$ y se conoce como transformada discreta de Fourier de la serie de $N$ números de $h_k$:
+
+$$ H_n = \sum_{k=0}^{N-1} h_k e^{-j 2 \pi k n / N} $$
+
+La transformada discreta mapea $N$ números complejos, $h_k$, en $N$ números complejos $H_n$. La relación entre la transformada de Fourier (continua) en las frecuencias $f_n$ y la transformada discreta, es: $H(f_n) \approx \Delta H_n$. \\
+
+Finalmente, la transformada discreta inversa de Fourier que recupera los números $h_k$ a partir de los números $H_n$ tiene la expresión:
+
+$$ h_k = \frac{1}{N} \sum_{k=0}^{N-1} H_n e^{j 2 \pi k n / N} $$
+
+Donde $j$ es la unidad imaginaria $j = \sqrt{-1} $.\\
+
+Para ilustrar la teoría estudiada anteriormente, hallaremos la transformada discreta de Fourier de la siguiente secuencia:
+
+$$X[n] = {1, 0, 1} $$
+
+Donde: 
+
+$$X[0] = 1,  X[1] = 0,  X[2] = 1 $$
+
+Sabemos que la TDF está definida como:
+
+$$ X_k = \sum_{n=0}^{N-1} X[n] e^{- \frac{2 \pi i}{N} k n } $$
+
+Donde $i = \sqrt{-1} $ y $n = 0,..., N-1 $.\\
+
+
+Como sabemos la TDF transforma una secuencia de números complejos en otra secuencia de números complejos, en nuestro ejemplo tenemos una secuencia binaria. Entonces tenemos que la sumatoria con la que obtendremos los números complejos de nuestra secuencia resultado es:
+
+$$ X_k = \sum_{n=0}^{2} X[n] e^{- \frac{2 \pi i k n}{3} } $$
+
+$$ X_0 = 1 e^{\frac{-2 \pi i (0)(0) }{3} } + 0e^{\frac{-2 \pi i (0)(1) }{3} } + 1e^{\frac{-2 \pi i (0)(2) }{3} } $$
+
+$$ X_0 = 1 + 0 + 1 = 2 $$
+
+
+$$ X_1 = 1 e^{\frac{-2 \pi i (1)(0) }{3} } + 0e^{\frac{-2 \pi i (1)(1) }{3} } + 1e^{\frac{-2 \pi i (1)(2) }{3} } $$
+
+$$ X_1 = 1 + e^{\frac {-4 \pi i} {3}}  $$
+
+Ahora usamos la identidad de Euler para continuar:
+
+$$ e^{i \theta } = cos (\theta) + i sen (\theta)$$
+
+$$ e^{\frac {-4 \pi i} {3}} = cos ({\frac {-4 \pi } {3}}) + i sen ({\frac {-4 \pi } {3}})$$
+
+$$ X_1 = 1 + cos ({\frac {-4 \pi } {3}}) + i sen ({\frac {-4 \pi } {3}})$$
+
+$$ X_1 = 1 + (-0.5) + 0.86i $$
+$$ X_1 = 0.5 + 0.86i $$
+
+$$ X_2 = 1 e^{\frac{-2 \pi i (2)(0) }{3} } + 0e^{\frac{-2 \pi i (2)(1) }{3} } + 1e^{\frac{-2 \pi i (2)(2) }{3} } $$
+
+$$ X_2 = 1 + e^{ \frac {-8 \pi i}{3}}$$
+
+Usamos identidad de Euler:
+
+$$ X_2 = 1 + cos( \frac{-8 \pi} {3}) + i sen ( \frac { -8 \pi}{3} ) $$
+
+$$ X_2 = 1 + (-0.5) + (-0.86i) $$
+$$ X_2 = 0.5 - 0.86i $$
+
+En conclusión tenemos que la transformada discreta de Fourier de nuestra secuencia $X[n]$ (secuencia binaria) es otra secuencia (de números complejos) que la llamaremos $R[k]$.
+
+$$R[k] = {2,   0.5 + 0.86i,   0.5 - 0.86i} $$
+
+Donde:
+
+$$R[0] = 2, R[1]= 0.5 + 0.86i, R[2] = 0.5 - 0.86i$$
+
+\subsection{Transformada Rápida de Fourier}
+
+Como vimos anteriormente, al realizar la Transformada Discreta de Fourier (DFT) sobre una muestra determinada es necesario realizar un total de $N^2$ multiplicaciones complejas donde $N$ es el tamaño de la muestra, lo cual en términos computacionales no es muy eficiente, en respuesta a esto surgió el algoritmo de la Transformada Rápida de Fourier (FFT), este al contrario requiere un número de operaciones del orden $Nlog(N)$, esto significa que la DFT puede calcularse en un tiempo mucho menor, a continuación veremos en detalle cómo funciona este algoritmo y su estrecha relación con la DFT.\\
+
+Como lo hicimos anteriormente, primero hallaremos la Transformada Discreta de Fourier de una secuencia dada:
+
+\begin{center}
+$X_{[n]} = [1,1,1,1]$
+\end{center}
+
+Donde $X_{[0]} = 1$, $X_{[1]} = 1$, $X_{[2]} = 1$, $X_{[3]} = 1$. Sabemos que la TDF está definida como:
+
+\begin{center}
+$X_{k} = \sum \limits_{j=0}^{N - 1} X_{[j]} \mathrm{e}^{\dfrac{-2\pi i}{N} kj}$
+\end{center}
+
+\begin{center}
+Con $k \in [0,...,N-1]$
+\end{center}
+
+Donde $i=(-1)^{\sfrac{1}{2}}$ y $n \in [0,...,N-1]$. Reemplazamos:
+
+\begin{center}
+$X_{k} = \sum \limits_{j=0}^{3} X_{[j]} \mathrm{e}^{\dfrac{-2\pi i}{4} jn}$
+\end{center}
+
+Para $X_{[0]} = 1(\mathrm{e}^{\dfrac{-\pi i}{2}(0)(0)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(0)(1)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(0)(2)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(0)(3)})$
+
+\begin{center}
+$X_{[0]} = 1 + 1 + 1 + 1 = 4$
+\end{center}
+
+Para $X_{[1]} = 1(\mathrm{e}^{\dfrac{-\pi i}{2}(1)(0)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(1)(1)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(1)(2)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(1)(3)})$
+
+\begin{center}
+$X_{[1]} = 1 + 1(\mathrm{e}^{\dfrac{-\pi i}{2}}) + 1(\mathrm{e}^{-\pi i}) + 1(\mathrm{e}^{\dfrac{-3\pi i}{2}})$
+\end{center}
+
+Aplicando la identidad de Euler $\mathrm{e}^{i \theta} = cos(\theta) + i Sin(\theta)$
+
+\begin{center}
+$X_{[1]} = 1 + 1(cos(\sfrac{-\pi}{2}) + i Sin(\sfrac{-\pi}{2})) + 1(cos(-\pi) + i Sin(-\pi)) + 1(cos(\sfrac{-3\pi}{2}) + i Sin(\sfrac{-3\pi}{2}))$
+\end{center}
+
+\begin{center}
+$X_{[1]} = 1 + (0-i) + (-1) + (0+i) = 0$
+\end{center}
+
+Para $X_{[2]} = 1(\mathrm{e}^{\dfrac{-\pi i}{2}(2)(0)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(2)(1)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(2)(2)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(2)(3)})$
+
+\begin{center}
+$X_{[2]} = 1 + 1(\mathrm{e}^{-\pi i}) + 1(\mathrm{e}^{-2\pi i}) + 1(\mathrm{e}^{-3\pi i})$
+\end{center}
+
+Aplicando la identidad de Euler
+
+\begin{center}
+$X_{[2]} = 1 + 1(cos(-\pi) + i Sin(-\pi)) + 1(cos(-2\pi) + i Sin(-2\pi)) + 1(cos(-3\pi) + i Sin(-3\pi))$
+\end{center}
+
+\begin{center}
+$X_{[2]} = 1 + (-1) + 1 + (-1) = 0$
+\end{center}
+
+Para $X_{[3]} = 1(\mathrm{e}^{\dfrac{-\pi i}{2}(3)(0)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(3)(1)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(3)(2)}) + 1(\mathrm{e}^{\dfrac{-\pi i}{2}(3)(3)})$
+
+\begin{center}
+$X_{[3]} = 1 + 1(\mathrm{e}^{\sfrac{-3\pi i}{2}}) + 1(\mathrm{e}^{-3\pi i}) + 1(\mathrm{e}^{\sfrac{-9\pi i}{2}})$
+\end{center}
+
+Aplicando la identidad de Euler
+
+\begin{center}
+$X_{[3]} = 1 + 1(cos(\sfrac{-3\pi}{2}) + i Sin(\sfrac{-3\pi}{2})) + 1(cos(-3\pi) + i Sin(-3\pi)) + 1(cos(\sfrac{-9\pi}{2}) + i Sin(\sfrac{-9\pi}{2}))$
+\end{center}
+
+\begin{center}
+$X_{[3]} = 1 + (0+i) + (-1) + (0-i) = 0$
+\end{center}
+
+Ahora obtenemos nuestra secuencia de números complejos:
+
+\begin{center}
+$R_{[k]} = [4,0,0,0]$
+\end{center}
+
+Donde $R_{[0]} = 4$, $R_{[1]} = 0$, $R_{[2]} = 0$, $R_{[3]} = 0$.\\
+
+Ya sabemos que al aplicar la transformada inversa obtendremos nuestro arreglo original, así que no la aplicaremos en esta ocasión ya que nos centraremos en la FFT.
+
+\begin{center}
+$X_{k} = \sum \limits_{j=0}^{N - 1} X_{[j]} W_{N}^{jk}$\\
+Con $W_{N} = \mathrm{e}^{\sfrac{-2\pi i}{N}}$
+\end{center}
+
+Tenemos nuestra fórmula general de la transformada discreta de Fourier, ahora si dividimos nuestra sumatoria, en dos sumatorias equivalentes, tal que una de ellas sean las sumas de los términos que estén en las posiciones pares, mientras que en la otra la suma de los términos que están ubicados en las posiciones impares, no alteramos la ecuación original.
+
+\begin{center}
+$ X_{k} = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j]} W_{N}^{2jk} + \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j+1]} W_{N}^{(2j+1)k}$
+\end{center}
+
+Si llamamos a las muestras $X_{[2j]}$ “pares” como $X_{1[j]}$ y  a las muestras $X_{[2j+1]}$ “impares” $X_{2[j]}$. Obtenemos:
+
+\begin{center}
+$ X_{k} = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{1[j]} W_{N}^{2jk} + \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{2[j]} W_{N}^{2jk} W_{N}^{k}$
+\end{center}
+
+Nótese que tenemos un factor común en ambas sumatorias, $W_{N}^{2jk}$, al desarrollarlo obtenemos:
+
+\begin{center}
+$W_{N}^{2jk} = \mathrm{e}^{\sfrac{-4jk\pi i}{N}}$
+\end{center}
+
+Ahora, si multiplicamos y dividimos el exponente por $\sfrac{1}{2}$ no alteramos su magnitud.
+
+\begin{center}
+$\sfrac{-4jk\pi i}{N} = \sfrac{-4jk\pi i}{N} \sfrac{\sfrac{1}{2}}{\sfrac{1}{2}} = \sfrac{-2jk\pi i}{\sfrac{N}{2}}$
+\end{center}
+
+Este resultado nos dará una expresión que llamaremos 
+
+\begin{center}
+$W_{\sfrac{N}{2}}^{jk} = \mathrm{e}^{\sfrac{-2jk\pi i}{\sfrac{N}{2}}}$
+\end{center}
+
+Sustituyendo en la ecuación general obtenemos
+
+\begin{center}
+$ X_{k} = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{1[j]} W_{\sfrac{N}{2}}^{jk} + W_{N}^{k} \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{2[j]} W_{\sfrac{N}{2}}^{jk}$
+\end{center}
+
+Vemos que la expresión  $\sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{1[j]} W_{\sfrac{N}{2}}^{jk}$ es la DFT definida para $\sfrac{N}{2}$ puntos. Entonces:
+
+\begin{equation}
+X_{k} = X_{1[k]} + W_{N}^{k} X_{2[k]}
+\end{equation}
+
+Donde $X_{1[k]}$ y $X_{2[k]}$ son dos DFT definidas para $\sfrac{N}{2}$ puntos. Ahora, como nuestra señal $X_{k}$ es periódica podemos decir que $X_{k} = X_{[k + \sfrac{N}{2}]}$, al resolver esta última expresión obtenemos:
+
+\begin{center}
+$X_{[k + \sfrac{N}{2}]} = X_{1[k + \sfrac{N}{2}]} + W_{N}^{k + \sfrac{N}{2}} X_{2[k + \sfrac{N}{2}]}$
+\end{center}
+
+También sabemos que $W_{N}^{k + \sfrac{N}{2}} = -W_{N}^{k}$. Reemplazando obtenemos:
+
+\begin{center}
+$X_{[k + \sfrac{N}{2}]} = X_{1[k + \sfrac{N}{2}]} -W_{N}^{k} X_{2[k + \sfrac{N}{2}]}$
+\end{center}
+
+Pero como $X_{k} = X_{[k + \sfrac{N}{2}]}$ podemos decir:
+
+\begin{equation}
+X_{k} = X_{1[k]} - W_{N}^{k} X_{2[k]}
+\end{equation}
+
+En resumen tenemos que la DFT de una muestra, $X_{k}$,se puede expresar como:
+
+\begin{center}
+$X_{k} = F_{1}(k) - W_{N}^{k} F_{2}(k)$
+\end{center}
+
+\begin{center}
+Donde $F_{1}(k)$ y  $F_{2}(k)$ son la DFT definida para $\sfrac{N}{2}$ puntos.
+\end{center}
+
+Podemos tomar dos funciones $G_{1} = F_{1}(k)$ y $G_{2} = W_{N}^{k} F_{2}(k)$ y a partir de estas la DFT se puede definir como:
+
+\begin{center}
+$X_{k} = G_{1} + G_{2}$
+\end{center}
+
+\begin{center}
+$X_{[k + \sfrac{N}{2}]} = G_{1} - G_{2}$
+\end{center}
+
+\begin{center}
+Con $k \in [0,...,\sfrac{N}{2} - 1]$
+\end{center}
+
+Habiendo realizado el proceso una vez, se puede repetir el proceso para cada una de las funciones $G_{1}$ y $G_{2}$. Podemos repetir este mismo proceso recursivamente, es decir, si por ejemplo hiciéramos este proceso para $G_{1}$ y $G_{2}$ obtendremos cuatro funciones $H_{1}$, $H_{2}$, $H_{3}$ y $H_{4}$ definidas para $\sfrac{N}{4}$ puntos. Siguiendo este proceso hasta su mínima expresión llegaremos a la DFT de un arreglo tamaño 2, el cual desarrollaremos a continuación.
+
+\begin{center}
+$R_{1[k]} = \sum \limits_{j=0}^{1} X_{[j]} \mathrm{e}^{-jk\pi i}$
+\end{center}
+
+Tendríamos entonces:
+
+\begin{center}
+$R_{1[k]} = R_{1[0]} + R_{1[1]} = (r_{[0]} \mathrm{e}^{0} + r_{[1]} \mathrm{e}^{0}) + (r_{[0]} \mathrm{e}^{0} - r_{[1]} \mathrm{e}^{0})$
+\end{center}
+
+Esto tiene sentido ya que nuestra función es periódica y por lo cual podemos decir que $k = k + \sfrac{N}{2}$, es decir, $1 = 1 + 0$. El algoritmo recursivo de la FFT, se basa sobre esta operación.\\
+
+Examinemos el siguiente ejemplo, tomaremos el mismo arreglo $X_{[n]} = [1,1,1,1]$
+
+\begin{center}
+$ X_{k} = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j]} W_{N}^{2jk} + W_{N}^{k} \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j+1]} W_{N}^{(2j + 1)k}$
+\end{center}
+
+\begin{center}
+$ X_{k} = Q_{1}(k) + W_{N}^{k} Q_{2}(k)$
+\end{center}
+
+\begin{center}
+$ X_{k + \sfrac{N}{2}} = Q_{1}(k) - W_{N}^{k} Q_{2}(k)$
+\end{center}
+
+Para $k = 0$ tenemos:
+
+\begin{center}
+$ X_{[0]} = Q_{1}(0) + W_{N}^{k} Q_{2}(0) = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j]} W_{N}^{2jk} + W_{N}^{k} \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j+1]} W_{N}^{(2j + 1)k}$
+\end{center}
+
+\begin{center}
+$ X_{[0]} = (X_{[0]} W_{4}^{2(0)(0)} + X_{[2]} W_{4}^{2(1)(0)}) + (X_{[1]} W_{4}^{2(0)(0)} + X_{[3]} W_{4}^{2(1)(0)})$
+\end{center}
+
+\begin{center}
+$X_{[0]} = (1(1) + 1(1)) + 1(1(1) + 1(1)) = 4$
+\end{center}
+
+Para $k = 1$ tenemos:
+
+\begin{center}
+$ X_{[1]} = Q_{1}(1) + W_{N}^{k} Q_{2}(1) = \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j]} W_{N}^{2jk} + W_{N}^{k} \sum \limits_{j=0}^{\sfrac{N}{2} - 1} X_{[2j+1]} W_{N}^{(2j + 1)k}$
+\end{center}
+
+\begin{center}
+$ X_{[1]} = (X_{[0]} W_{4}^{2(0)(1)} + X_{[2]} W_{4}^{2(1)(1)}) + (X_{[1]} W_{4}^{2(0)(1)} + X_{[3]} W_{4}^{2(1)(1)})$
+\end{center}
+
+\begin{center}
+$X_{1} = (1(1) + (-1)) + W_{4}^{1}(1(1) + (-1))$
+\end{center}
+
+Usando la identidad de Euler tenemos
+
+\begin{center}
+$X_{[1]} = (1(1) + (-1)) + (1 + cos(-\sfrac{\pi}{2}) + i sin(-\sfrac{\pi}{2}))(1(1) + (-1)) = 0 + (0 + i)(0) = 0$
+\end{center}
+
+Para $k = 2$ tenemos:
+
+\begin{center}
+$ X_{[2]} = Q_{1}(2) + W_{N}^{k} Q_{2}(2)$
+\end{center}
+
+Pero ya que $X_{[k]} = X_{[k + \sfrac{N}{2}]}$ podemos usar el resultado obtenido en $X_{0}$ para hallar $X_{2}$. Ya que $X_{0} = (X_{[0]} W_{4}^{0} + X_{[2]} W_{4}^{0}) + W_{4}^{0} (X_{[1]} W_{4}^{0} + X_{[3]} W_{4}^{0})$, tenemos
+
+\begin{center}
+$ X_{[2]} = (X_{[0]} W_{4}^{0} - X_{[2]} W_{4}^{0}) + W_{4}^{0}(X_{[1]} W_{4}^{0} - X_{[3]} W_{4}^{0})$
+\end{center}
+
+\begin{center}
+$ X_{[2]} = (1(1) + 1(1)) - 1(1(1) + 1(1)) = 2 - 2 = 0$
+\end{center}
+
+Para $k = 3$ usaremos el resultado obtenido de $X_{[1]} = (X_{[0]} W_{4}^{0} - X_{[2]}) + W_{4}^{1} (X_{[1]} W_{4}^{0} - X_{[3]})$, tenemos:
+
+\begin{center}
+$X_{[3]} = (X_{[0]} W_{4}^{0} - X_{[2]}) - W_{4}^{1} (X_{[1]} W_{4}^{0} - X_{[3]})$
+\end{center}
+
+Usando la identidad de Euler tenemos
+
+\begin{center}
+$X_{[3]} = (1(1) - 1) + (1 + cos(-\sfrac{\pi}{2}) + i sin(-\sfrac{\pi}{2}))(1(1) - 1) = 0 + (0 + i)(0) = 0$
+\end{center}
+
+Puede verse que el resultado coincide con el obtenido a través de la DFT. En primera instancia el algoritmo FFT se ve más complicado pero es mucho más sencillo ya que requiere menos operaciones. Sabemos que la DFT tiene un orden de $N^{2}$ operaciones. Por su parte la FFT para una muestra de tamaño $N$ viene dada por:
+
+\begin{center}
+$FFT(N) = DFT(\sfrac{N}{2}) + DFT(\sfrac{N}{2}) = \sfrac{N^{2}}{2}$
+\end{center}
+
+Puede verse que el número de operaciones requeridas ya es inferior al de la DFT, en forma general tendremos que el orden de operaciones será, $FFT(N) = 2 FFT(\sfrac{N}{2}) + N$. Veamos que pasa si seguimos la recursión.
+
+\begin{center}
+$FFT(N) = 2 (2 FFT(\sfrac{N}{4}) + \sfrac{N}{2}) + N$
+\end{center}
+
+Para el caso general podemos decir:
+
+\begin{center}
+$FFT(N) = 2^{k} FFT(\sfrac{N}{2^{k}}) k N$
+\end{center}
+
+Cuando lleguemos a la última recursión tendremos que es la DFT para una pareja de elementos, es decir, cero operaciones. Podemos decir entonces que que el orden de operaciones de la $DFT$ para 2 elementos es mínima, es decir $DFT(1) = 0$, entonces teniendo en cuenta que $(\sfrac{N}{2^{k}} = 1$ y despejando $k$ tenemos, $K = Log_{2} N$, con lo cual el orden de operaciones:
+
+\begin{center}
+$FFT(N) = 2^{k} FFT(\sfrac{N}{2^{k}}) k N = 2^{k} (0) + k N = N Log_{2} N$
+\end{center}
+
+En resumen para una muestra de tamaño $N$ se requieren del orden de $N Log N$ operaciones, a nivel computacional siempre será más eficiente el algoritmo FFT que la definición de la DFT.
+
+\section{Funcionamiento de la aplicación}
+
+Primero leemos la imagen por columnas, y almacenamos sus componentes RGB en una lista (convertimos la imagen en una lista 1D).   
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.4\textwidth]{imageFuncionamiento.png}
+\caption{\label{fig:ventanimagena}Procesar imagen.}
+\end{figure}
+
+Ahora tomamos el código ASCII asociado al carácter que queremos ocultar, por ejemplo si se quiere ocultar la letra E,  su código ASCII es 69, este número lo convertimos en binario:  01000101 \\
+
+Ahora necesitamos ocultar 8 bits, para ello hallamos la TDF de cada 4 componentes de la lista asociada a la imagen. \\
+
+De forma general, lo que vamos a tener es: \\
+Sean k,l,m,n,  4 componentes de la imagen donde k,l,m,n pertecenen a los números enteros positivos y están en el intervalo [0 - 255 ]. Al hallar la TDF de esta muestra de tamaño 4 vamos a obtener el siguiente resultado:
+
+$$coeficiente[0] = a, donde a, b, c, d \in Z_+  $$
+$$coeficiente[1] = b + ci$$
+$$coeficiente[2] = d$$
+$$coeficiente[3] = b - ci$$
+
+Ahora lo que hacemos es guardar un bit en la parte real (b), y otro bit en la parte imaginaria (c). \\
+
+Para hacer lo anteriormente dicho razonamos de la siguiente forma:
+
+\begin{itemize}
+\item Si bit = 0, y el número es par, el numero se deja igual.
+\item Si bit = 0, y el numero es impar, decrementar el numero en una unidad.
+\item Si bit = 1, y el numero es impar, el numero se deja igual.
+\item Si bit = 1 y el numero es  par, incrementar el numero en una unidad.\\
+\end{itemize}
+
+Una vez terminado esto hallamos la transformada inversa, y asi obtenemos la estego-imagen, es decir la imagen que tiene el mensaje oculto.\\
+
+Por último para obtener el mensaje oculto, solo se halla la TDF de cada 4 componentes de la estego-imagen, y se verifica si la parte real es par entonces el bit oculto es 0, sino entonces es 1, y de la misma forma con la parte imaginaria hasta que se construya todo el mensaje oculto.\\
+
+Al proponer este algoritmo, el punto clave fue escoger muestras de tamaño 4, para hallarle la TDF, porque de esta forma solo trabajariamos con los números enteros, en cambio si se hubiera escogido muestras mayores a 4, el resultado de la TDF sería valores reales, y al trabajar con estos existe el riesgo de perder información. \\
+
+La aplicación se encuentra dividida en dos funcionalidades principales, las cuales son:
+
+\newpage
+
+\subsection{Ocultar información}
+
+Ventana Principal: 
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.4\textwidth]{Ventana.png}
+\caption{\label{fig:ventana}Ventana principal.}
+\end{figure}
+
+Elegimos la imagen que nos servirá para ocultar el mensaje, por ejemplo:
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.3\textwidth]{Penguins.png}
+\caption{\label{fig:penguins}Imagen portadora.}
+\end{figure}
+
+Hacemos clic en ocultar información, después cargamos la imagen portador e ingresamos el mensaje que vamos a ocultar:
+
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.5\textwidth]{Ventana2.png}
+\caption{\label{fig:ventana2}Ocultar mensaje en EstegoImagen.}
+\end{figure}
+
+\newpage
+
+Después hacemos clic en Ocultar Información y nos aparece la siguiente ventana que nos permitirá guardar la estego imagen:
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.4\textwidth]{Ventana3.png}
+\caption{\label{fig:ventana3}Mensaje al generar EstegoImagen.}
+\end{figure}
+
+Ahora vamos a la ruta donde guardamos la estego imagen, y vemos que esta no se altero en lo más mínimo, a pesar de que ocultamos en ella 5677 caracteres. De hecho hubiéramos podido guardar muchos más caracteres y la imagen no presentaría grandes cambios.
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.4\textwidth]{Ventana4.png}
+\caption{\label{fig:ventana4}EstegoImagen resultante.}
+\end{figure}
+
+
+\subsection{Revelar información}
+
+Ahora volvemos a la ventana principal, seleccionamos la opción revelar información, y cargamos la estego imagen. Después de esto hacemos clic en revelar información, y en el área de texto nos aparecerá el mensaje oculto, y en la parte inferior de la ventana nos mostrara el número de caracteres de dicho mensaje:
+
+\begin{figure}[htpb]
+\centering
+\includegraphics[width=0.5\textwidth]{Ventana5.png}
+\caption{\label{fig:inverso}Extracción de mensaje de EstegoImagen.}
+\end{figure}
+
+\newpage
+
+\begin{thebibliography}{9}
+
+
+\bibitem{simmons83}
+  Gustavus J. Simmons,\\
+  \emph{Advances in Cryptology: Proceedings of CRYPTO '83, The Prisoners' Problem and the Subliminal Channel}
+  Plenum,
+  1983.
+  
+\bibitem{jfjames}
+  J. F. James,\\
+  \emph{A Students Guide to Fourier Transforms}
+  CAMBRIDGE,
+  2011.  
+  
+\bibitem{pro}
+  Pablo Roncagliolo,\\
+  \emph{Procesamiento Digital de Imágenes}
+  Universidad Técnica Federico Santa María,
+  2007.  
+
+\bibitem{rojas08}
+  Ángela Rojas Matas,\\
+  \emph{Intercambio de información secreta con la Transformada Discreta de Fourier.}
+  Universidad de Córdoba,
+  2008.
+  
+
+\bibitem{estegano07}
+  Carlos Velasco-Bautista, Julio López-Hernández, Mariko Nakano-Miyatake, Héctor Pérez-Meana,\\
+  \emph{Esteganografía en una imagen digital en el dominio DCT.}
+  Escuela Superior de Ingeniería Mecánica y Eléctrica, Unidad Culhuacán, Instituto Politécnico Nacional
+  2007.
+    
+
+\bibitem{estegano04}
+  Mehdi Kharrazi, Husrev T. Sencar, Nasir Memon,\\
+  \emph{Image Steganography: Concepts and Practice}.
+  Polytechnic University
+  2004.
+    
+\bibitem{esteganoJaume}
+  José Miguel Sanchiz Martí,\\
+  \emph{La Transformada Discreta de Fourier en Análisis de Imagen}.
+  Universidad Jaume.
+  
+
+\bibitem{secure}
+  Faisal Alturki, Russell Mersereau.\\
+  \emph{Secure blind image steganographic technique using discrete Fourier transformation}.
+  Proceedings of 2001 International Conference on Image Processing.
+  Greece, 2001. pp. 542-545.  
+   
+\end{thebibliography}
+
+
+\end{document}
+
